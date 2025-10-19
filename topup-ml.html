@@ -1,0 +1,213 @@
+<!-- Saya membuat halaman topup Mobile Legends: merender paket, memilih paket, dan memicu checkout demo. -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Top Up Mobile Legends - DiamondStore</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Menetapkan variabel warna tema dan penjelasan singkat tentang tujuan kelas tema.
+        Variabel ini dipakai untuk konsistensi warna komponen seperti kartu paket, input, dan penanda. -->
+  <style>
+    :root{
+      --theme-bg: #fbf6ff;      /* background gelap/purple */
+      --card: #faf7fa;          /* warna kotak utama */
+      --card-2: #fdf5ff;        /* warna kotak sedikit terang */
+      --muted: #333131;         /* teks muted */
+      --accent: #e0be40;        /* highlight (opsional) */
+    }
+    /* Kelas utilitas tema: dipakai pada elemen kartu untuk konsistensi tampilan */
+    .theme-card{ background-color:var(--card); color:var(--muted); }
+    .theme-card-2{ background-color:var(--card-2); color:var(--muted); }
+    .pack-btn.theme{ background:transparent; border-color: rgba(0,0,0,0.06); color:var(--muted); }
+    .pack-btn.theme.selected{ background: rgba(0,0,0,0.03); box-shadow: 0 0 0 2px rgba(0,0,0,0.04); }
+    /* pastikan input/select bisa diklik/ditulis dan terlihat di tema terang */
+    input.theme-input, select.theme-input{
+      background: var(--card);
+      color: var(--muted);
+      border-color: rgba(0,0,0,0.08);
+      pointer-events: auto;
+      z-index: 10;
+    }
+    .summary-card{ background:#0b0b0b; color:#fff; }
+
+    /* Gaya visual untuk menandai tombol paket yang sedang dipilih oleh pengguna */
+    .pack-btn{ position:relative; transition:all .18s ease; }
+    .pack-btn .pack-price{ color:#4b5563; /* default muted */ transition: color .18s; }
+    .pack-btn.selected{ border-color:var(--accent); transform: translateY(-3px); }
+    .pack-btn.selected .pack-price{ color:var(--accent); font-weight:700; }
+    .pack-btn.selected::after{
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--accent);
+      color: #111;
+      font-size:12px;
+      padding: 2px 6px;
+      border-radius:9999px;
+      font-weight:700;
+    }
+
+    /* Gaya untuk header accordion metode pembayaran dan indikator ketika suatu metode terpilih */
+    .accordion-head{ transition:background .15s, color .15s; }
+    .accordion-head.payment-selected{ background: rgba(224,190,64,0.12); }
+    .accordion-head.payment-selected::after{
+      content: 'Terpilih';
+      margin-left: 8px;
+      background: var(--accent);
+      color:#111;
+      font-size:11px;
+      padding: 3px 8px;
+      border-radius:9999px;
+      display:inline-block;
+      vertical-align:middle;
+      font-weight:700;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+  <header class="bg-blue-700 text-white flex items-center justify-between px-6 py-3">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold">DiamondStore</h1>
+    </div>
+    <a href="index.html" class="text-white">Kembali</a>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-4">
+    <div class="bg-white rounded-lg shadow p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <section class="md:col-span-2">
+        <div class="flex items-center gap-4">
+          <img src="ml.jpg" alt="ML" class="w-14 h-14 rounded" />
+          <div>
+            <h2 class="text-xl font-semibold">Top Up Mobile Legends</h2>
+            <p class="text-sm text-gray-600">Pilih nominal diamond</p>
+          </div>
+        </div>
+
+        <!-- Area paket: daftar paket di‑render secara dinamis oleh JavaScript dari array 'packs' -->
+        <div id="pack-list" class="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <!-- Tempat tombol paket akan dihasilkan secara dinamis oleh skrip JavaScript di bawah -->
+        </div>
+
+        <!--Pilihan pembayaran (accordion): setiap header dapat dibuka untuk menampilkan detail metode pembayaran.
+            Saat ini membuka header menandai metode terpilih dan menampilkan notifikasi demo "Coming Soon". -->
+        <div class="mt-6">
+          <div class="theme-card rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <div class="text-sm font-semibold">Pilih Pembayaran</div>
+            </div>
+            <div class="space-y-3">
+              <!-- Coinpedia -->
+              <div class="border rounded overflow-hidden theme-card-2">
+                <button class="w-full flex items-center justify-between px-3 py-3 bg-transparent accordion-head">
+                  <div class="flex items-center gap-3"><span class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">1</span><span>DS-Coin</span></div>
+                  <svg class="w-4 h-4 transform" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="p-3 hidden accordion-body text-sm">Metode Coinpedia tersedia. Min/Max sesuai provider.</div>
+              </div>
+              
+              <!-- QRIS -->
+              <div class="border rounded overflow-hidden theme-card-2">
+                <button class="w-full flex items-center justify-between px-3 py-3 bg-transparent accordion-head">
+                  <div class="flex items-center gap-3"><span class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">QR</span><span>QRIS (All Payment)</span></div>
+                  <svg class="w-4 h-4 transform" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="p-3 hidden accordion-body text-sm">Scan QR untuk membayar via e-wallet/bank.</div>
+              </div>
+              
+              <!-- E-Wallet -->
+              <div class="border rounded overflow-hidden theme-card-2">
+                <button class="w-full flex items-center justify-between px-3 py-3 bg-transparent accordion-head">
+                  <div class="flex items-center gap-3"><span class="w-8 h-8 bg-indigo-400 rounded-full flex items-center justify-center">E</span><span>E-Wallet</span></div>
+                  <svg class="w-4 h-4 transform" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="p-3 hidden accordion-body text-sm">DANA, OVO, GoPay, LinkAja dan lainnya.</div>
+              </div>
+              
+              <!-- Virtual Account -->
+              <div class="border rounded overflow-hidden theme-card-2">
+                <button class="w-full flex items-center justify-between px-3 py-3 bg-transparent accordion-head">
+                  <div class="flex items-center gap-3"><span class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">VA</span><span>Virtual Account</span></div>
+                  <svg class="w-4 h-4 transform" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="p-3 hidden accordion-body text-sm">Transfer via bank (VA) tersedia untuk beberapa bank.</div>
+              </div>
+              
+              <!-- Convenience Store -->
+              <div class="border rounded overflow-hidden theme-card-2">
+                <button class="w-full flex items-center justify-between px-3 py-3 bg-transparent accordion-head">
+                  <div class="flex items-center gap-3"><span class="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">CS</span><span>Convenience Store</span></div>
+                  <svg class="w-4 h-4 transform" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="p-3 hidden accordion-body text-sm">Bayar melalui Alfamart/Indomaret dsb.</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Form kontak yang diminta untuk menghubungi pembeli jika terjadi masalah; berada di bawah daftar metode pembayaran -->
+          <div class="mt-4 theme-card rounded-lg p-4">
+            <div class="text-sm font-semibold mb-3">Detail Kontak</div>
+            <label class="text-xs text-gray-400">Email</label>
+            <input id="contact-email" type="email" placeholder="example@gmail.com" class="w-full mb-3 mt-1 px-3 py-2 border rounded theme-input" tabindex="0" autocomplete="email" />
+            
+            <label class="text-xs text-gray-400">No. WhatsApp</label>
+            <div class="flex gap-2 items-center mt-1">
+              <select id="phone-country" class="px-2 py-2 border rounded theme-input" tabindex="0">
+                <option value="+62">🇮🇩 +62</option>
+                <option value="+60">🇲🇾 +60</option>
+              </select>
+              <input id="contact-phone" type="tel" placeholder="81234567890" class="flex-1 px-3 py-2 border rounded theme-input" tabindex="0" inputmode="tel" autocomplete="tel" />
+            </div>
+            <p class="text-xs text-gray-400 mt-2">*Nomor ini akan dihubungi jika terjadi masalah</p>
+          </div>
+        </div>
+        <!-- Selesai: Tampilan Pilih Pembayaran & Detail Kontak -->
+        
+      </section>
+      <aside class="bg-slate-50 p-4 rounded">
+        <h3 class="font-semibold mb-3">Informasi Pesanan</h3>
+        <label class="text-sm text-gray-600">User ID</label>
+        <input id="userid" class="w-full mt-1 mb-3 px-3 py-2 border rounded" placeholder="Contoh: 123456" />
+
+        <label class="text-sm text-gray-600">Zone ID</label>
+        <input id="zoneid" class="w-full mt-1 mb-3 px-3 py-2 border rounded" placeholder="Contoh: 2020" />
+
+        <div class="flex items-center justify-between mt-3">
+          <div class="text-sm">Stok</div>
+          <div id="stock" class="text-sm text-green-600">--</div>
+        </div>
+
+        <div class="flex items-center gap-2 mt-3">
+          <button id="dec" class="px-3 py-1 bg-gray-200 rounded">-</button>
+          <input id="qty" class="w-16 text-center px-2 py-1 border rounded" value="1" />
+          <button id="inc" class="px-3 py-1 bg-gray-200 rounded">+</button>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-sm text-gray-500">Total</div>
+          <div id="total" class="text-2xl font-bold text-blue-600 mt-1">Rp0</div>
+        </div>
+
+        <button id="buy" class="w-full mt-4 bg-blue-600 text-white py-2 rounded font-semibold">Beli Sekarang</button>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Muat util global (showToast, checkout) dan topup-common util -->
+  <script src="js/main.js"></script>
+  <script src="js/topup-common.js"></script>
+  <script>
+    // pages tetap menyediakan data paket lalu panggil initTopup
+    const packs = [
+      { id:'p220', label:'220 Diamonds', price:58599, stock:9586 },
+      { id:'p366', label:'366 Diamonds', price:95000, stock:1200 },
+      { id:'p568', label:'568 Diamonds', price:144800, stock:500 },
+      { id:'p257', label:'257 Diamonds', price:68399, stock:800 },
+    ];
+    // saya inisialisasi util topup bersama (game id => backend nanti)
+    initTopup({ packs, game: 'mobile-legends' });
+  </script>
+</body>
+</html>

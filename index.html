@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diamond Store</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="js/main.js"></script>
+  
+  <!-- 🔹 Navbar -->
+  <header class="bg-blue-700 text-white flex items-center justify-between px-6 py-3">
+    <div class="flex items-center space-x-3">
+      <h1 class="text-2xl font-bold">DiamondStore</h1>
+      <nav class="hidden md:flex space-x-4 text-sm">
+        <a href="index.html" class="hover:underline">Home</a>
+        <a href="transaksi.html" class="hover:underline">Transaksi</a>
+        <a href="pengaturan.html" class="hover:underline">Pengaturan</a>
+      </nav>
+    </div>
+    <button id="loginBtn" class="bg-white text-blue-700 px-3 py-1 rounded-md font-semibold">Masuk</button>
+  </header>
+
+  <!-- 🔹 Search Bar -->
+  <div class="bg-blue-600 py-3 px-4 flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-2">
+    <input
+      type="text"
+      placeholder="Coba cari game..."
+      class="w-full md:w-1/2 px-3 py-2 rounded-lg text-gray-800 focus:outline-none"
+    />
+    <button class="bg-yellow-400 text-gray-800 font-semibold px-4 py-2 rounded-lg">Cari</button>
+  </div>
+
+  <!-- 🔹 Kategori -->
+  <div class="bg-blue-800 text-white text-sm flex flex-wrap justify-center py-2 space-x-4">
+    <a href="topup-ml.html" class="hover:underline">Mobile Legends</a>
+    <a href="topup-ff.html" class="hover:underline">Free Fire</a>
+    <a href="topup-roblox.html" class="hover:underline">Roblox</a>
+    <a href="topup-valo.html" class="hover:underline">Valorant</a>
+    <a href="topup-genshin.html" class="hover:underline">Genshin Impact</a>
+  </div>
+
+  <!-- Modal styles -->
+  <style>
+    .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.45); display:none; align-items:center; justify-content:center; z-index:60; }
+    .modal-overlay[aria-hidden="false"]{ display:flex; }
+    .modal-dialog{ width:320px; max-width:95%; background:#fff; border-radius:12px; padding:18px; box-shadow:0 10px 30px rgba(2,6,23,0.4); color:#111; position:relative; }
+    .modal-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .modal-title{ font-weight:700; font-size:18px; display:flex; align-items:center; gap:8px; }
+    .modal-close{ background:transparent; border:0; font-size:18px; cursor:pointer; color:#6b7280; }
+    .modal-input{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:6px; margin-top:8px; }
+    .btn-primary{ background:#1e90ff; color:#fff; padding:10px 14px; border-radius:8px; border:0; width:100%; font-weight:700; cursor:pointer; margin-top:12px; }
+    .divider{ display:flex; align-items:center; gap:12px; margin:12px 0; color:#9ca3af; font-size:12px }
+    .divider::before,.divider::after{ content:""; flex:1; height:1px; background:#e5e7eb; }
+    .btn-google{ display:flex; align-items:center; gap:10px; border:1px solid #e5e7eb; padding:8px 10px; border-radius:8px; width:100%; background:#fff; cursor:pointer; }
+    .modal-smalltext{ font-size:12px; color:#6b7280; margin-top:6px; text-align:center; }
+
+    /* Toast styles */
+    .toast-container{
+      position:fixed;
+      right:16px;
+      bottom:16px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      z-index:70;
+      pointer-events:none;
+    }
+    .toast{
+      pointer-events:auto;
+      min-width:200px;
+      max-width:360px;
+      padding:10px 14px;
+      border-radius:10px;
+      color:#08101a;
+      background:#eef2ff;
+      box-shadow:0 6px 18px rgba(2,6,23,0.12);
+      font-weight:600;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .toast.info{ background:#E0F2FE; color:#0369A1; }
+    .toast.success{ background:#DCFCE7; color:#065F46; }
+    .toast.warn{ background:#FFF7ED; color:#92400E; }
+    .toast.error{ background:#FEE2E2; color:#7F1D1D; }
+    .toast .close{ margin-left:auto; background:transparent; border:0; font-weight:700; cursor:pointer; color:inherit; }
+  </style>
+
+  <style>
+
+  
+    /* 🔹 Animasi Scroll Pelan */
+    @keyframes scroll-slow {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* container yang digerakkan harus 200% supaya -50% = 1 set kartu */
+    .animate-scroll-slow {
+      display: flex;
+      width: 200%;
+      animation: scroll-slow 80s linear infinite; /* scroll otomatis */
+      justify-content: flex-start; /* mulai dari kiri */
+      align-items: center;
+      gap: 2.5rem; /* jarak antara dua set juga mengikuti gap */
+    }
+
+    /* setiap set kartu (lengkap) berbaris horisontal */
+    .cards {
+      display: flex;
+      gap: 2.5rem; /* jarak antar kartu */
+      padding-inline: 0; 
+      margin: 0;
+    }
+
+    /* NEW: full-image card styles (perbesar kotak) */
+    .card-full {
+      position: relative;
+      height: 380px; /* diperbesar */
+      overflow: hidden;
+      border-radius: 1rem;
+    }
+    .card-full img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-full .card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.45) 65%, rgba(0,0,0,0.7) 100%);
+      pointer-events: none;
+    }
+    .card-full .card-body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 1.25rem;
+      text-align: center;
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(11,22,51,0) 0%, rgba(11,22,51,0.12) 30%, rgba(11,22,51,0.55) 100%);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- 🔹 Banner Section Kartu Game dengan Video Latar -->
+  <section class="relative h-[520px] overflow-hidden">
+    <!-- 🔹 Background Video -->
+    <video autoplay loop muted playsinline class="absolute w-full h-full object-cover opacity-90">
+      <source src="video.mp4" type="video/mp4">
+    </video>
+
+    <!-- 🔹 Overlay Biru -->
+    <div class="absolute inset-0 bg-blue-900/50"></div>
+
+    <!-- 🔹 Scroll Container -->
+    <div class="absolute inset-0 flex items-center">
+      <div class="w-full overflow-hidden">
+        <!-- animate-scroll-slow sekarang berisi dua set kartu identik -->
+        <div class="animate-scroll-slow">
+          <div class="cards">
+            <!-- 🔹 5 Kartu Game (full-image style) -->
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="rb.jpg" alt="Roblox">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Roblox</h3>
+                <p class="text-sm text-gray-300">25% More Robux</p>
+                <a href="topup-roblox.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="ml.jpg" alt="Mobile Legends">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Mobile Legends</h3>
+                <p class="text-sm text-gray-300">New Event!</p>
+                <a href="topup-ml.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="valo.jpg" alt="Valorant">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Valorant</h3>
+                <p class="text-sm text-gray-300">Diskon 15%</p>
+                <a href="topup-valo.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="gi.jpg" alt="Genshin Impact">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Genshin Impact</h3>
+                <p class="text-sm text-gray-300">New Banner</p>
+                <a href="topup-genshin.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="ff.jpg" alt="ff">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Free Fire</h3>
+                <p class="text-sm text-gray-300">Special Event!</p>
+                <a href="topup-ff.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- duplikat persis untuk loop tanpa jeda -->
+          <div class="cards" aria-hidden="true">
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="rb.jpg" alt="Roblox">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Roblox</h3>
+                <p class="text-sm text-gray-300">25% More Robux</p>
+                <a href="topup-roblox.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="ml.jpg" alt="Mobile Legends">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Mobile Legends</h3>
+                <p class="text-sm text-gray-300">New Event!</p>
+                <a href="topup-ml.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="valo.jpg" alt="Valorant">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Valorant</h3>
+                <p class="text-sm text-gray-300">Diskon</p>
+                <a href="topup-valo.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="gi.jpg" alt="Genshin Impact">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Genshin Impact</h3>
+                <p class="text-sm text-gray-300">New Banner</p>
+                <a href="topup-genshin.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+
+            <div class="w-96 card-full bg-[#0B1633]/95 rounded-2xl shadow-xl overflow-hidden flex-shrink-0 border border-blue-700/30">
+              <img src="ff.jpg" alt="ff">
+              <div class="card-overlay"></div>
+              <div class="card-body">
+                <h3 class="font-bold text-white text-xl">Free Fire</h3>
+                <p class="text-sm text-gray-300">Special Event!</p>
+                <a href="topup-ff.html" class="mt-4 inline-block bg-blue-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-blue-500 transition">
+                  Top Up
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🔹 Footer -->
+  <footer class="bg-blue-700 text-white text-center py-4 text-sm">
+    <p>🔒 Transaksi Aman | 💰 Garansi Uang Kembali | 📞 Bantuan 24/7</p>
+    <p class="mt-1">© 2025 DiamondStore. Semua Hak Dilindungi.</p>
+    <p class="mt-1">Hubungi kami di: support@diamondstore.com</p> <!-- Added contact information -->
+  </footer>
+
+  <!-- Tambahan: override CSS supaya carousel mulai dari kiri dan tampilan konsisten -->
+  <style>
+    /* existing override rules... */
+    .carousel-center {
+      display: flex !important;
+      justify-content: flex-start !important;
+      align-items: center !important;
+      max-width: 1200px;
+      margin: 0;
+      padding-left: 0;
+    }
+    .cards {
+      padding-inline: 0 !important;
+      gap: 1.5rem;
+    }
+    .animate-scroll-slow { transform: translateX(0); align-items: center; }
+    section.relative { margin: 0; padding: 0; }
+  </style>
+
+  <!-- OPTIONAL: Override to force continuous play on all devices -->
+  <style>
+    .animate-scroll-slow { animation-play-state: running !important; }
+    /* Tambahan: pause saat hover (ditambahkan !important dan diletakkan setelah aturan running supaya efektif) */
+    .animate-scroll-slow:hover { animation-play-state: paused !important; cursor: pointer; }
+
+  </style>
+
+
+<section class="py-10 bg-gray-100 text-center">
+  <h2 class="text-2xl font-bold mb-6 text-blue-700">Promo Terbaru</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-6 max-w-6xl mx-auto">
+    <div class="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
+      <div class="aspect-video w-full mb-3 overflow-hidden rounded-lg">
+        <img src="ml.jpg" class="w-full h-full object-cover" alt="Mobile Legends">
+      </div>
+      <h3 class="font-semibold text-lg">Bonus Diamond 20%</h3>
+      <p class="text-sm text-gray-500">Periode: 15 - 30 Oktober</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
+      <div class="aspect-video w-full mb-3 overflow-hidden rounded-lg">
+        <img src="valo.jpg" class="w-full h-full object-cover" alt="Valorant">
+      </div>
+      <h3 class="font-semibold text-lg">Diskon VP 10%</h3>
+      <p class="text-sm text-gray-500">Khusus pengguna baru</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-md p-5 hover:shadow-lg transition">
+      <div class="aspect-video w-full mb-3 overflow-hidden rounded-lg">
+        <img src="ff.jpg" class="w-full h-full object-cover" alt="Free Fire">
+      </div>
+      <h3 class="font-semibold text-lg">Top-Up FF Bonus Item</h3>
+      <p class="text-sm text-gray-500">Hari ini saja!</p>
+    </div>
+  </div>
+</section>
+
+<section class="py-10 bg-blue-50 text-center">
+  <h2 class="text-2xl font-bold mb-6 text-blue-700">Apa Kata Mereka?</h2>
+  <div class="flex flex-wrap justify-center gap-6 px-6">
+    <div class="bg-white shadow-md rounded-lg p-6 max-w-xs">
+      <p class="text-gray-600 italic">“Belum ada ulasan”</p>
+    </div>
+</section>
+
+<section class="py-8 bg-blue-900 text-white text-center">
+  <h2 class="text-xl font-semibold mb-3">Tentang DiamondStore</h2>
+  <p class="text-sm text-gray-200 max-w-2xl mx-auto">
+    Kami menyediakan layanan top-up cepat dan aman untuk berbagai game populer.
+    Dengan sistem otomatis dan pembayaran yang mudah, DiamondStore menjadi pilihan #1 gamer Indonesia.
+  </p>
+</section>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal-overlay" role="dialog" aria-hidden="true" aria-labelledby="modalTitle" aria-modal="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Welcome <span style="font-size:16px">👍</span></div>
+        <button class="modal-close" id="modalClose" aria-label="Tutup">&times;</button>
+      </div>
+      <div style="margin-top:12px">
+        <label class="text-xs" style="color:#6b7280">Email</label>
+        <input id="modalEmail" class="modal-input" type="email" placeholder="DiamondStore@gmail.com" autocomplete="email" />
+        <button id="modalSubmit" class="btn-primary">Masuk</button>
+        <div class="divider">ATAU</div>
+        <button id="modalGoogle" class="btn-google">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21.6 12.227c0-.68-.06-1.334-.174-1.947H12v3.69h5.4c-.233 1.26-.94 2.33-2.01 3.045v2.53h3.247c1.902-1.75 2.99-4.34 2.99-7.318z" fill="#4285F4"/><path d="M12 22c2.7 0 4.98-.9 6.64-2.45l-3.247-2.53c-.905.61-2.06.98-3.393.98-2.605 0-4.813-1.75-5.6-4.11H3.01v2.58C4.66 19.9 8.06 22 12 22z" fill="#34A853"/><path d="M6.4 13.88a5.98 5.98 0 010-3.76V7.53H3.01a9.992 9.992 0 000 8.94l3.39-2.6z" fill="#FBBC05"/><path d="M12 6.1c1.48 0 2.82.51 3.88 1.5l2.9-2.9C16.98 2.94 14.7 2 12 2 8.06 2 4.66 4.1 3.01 7.53l3.39 2.59C7.187 7.85 9.395 6.1 12 6.1z" fill="#EA4335"/></svg>
+          <span>Lanjutkan dengan Google</span>
+        </button>
+        <p class="modal-smalltext">Dengan masuk, Anda setuju dengan Ketentuan layanan kami.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (function(){
+      // Toast helper
+      const toastContainer = document.getElementById('toastContainer');
+      function showToast(message, type='info', timeout=3500){
+        const t = document.createElement('div');
+        t.className = 'toast '+(type||'info');
+        t.innerHTML = '<span>'+message+'</span><button class="close" aria-label="close">&times;</button>';
+        toastContainer.appendChild(t);
+        const remove = ()=> t.remove();
+        t.querySelector('.close').addEventListener('click', remove);
+        setTimeout(remove, timeout);
+        return t;
+      }
+      // expose global
+      window.showToast = showToast;
+
+      // Login modal + persistence
+      const loginBtn = document.getElementById('loginBtn');
+      const modal = document.getElementById('loginModal');
+      const closeBtn = document.getElementById('modalClose');
+      const emailInput = document.getElementById('modalEmail');
+      const googleBtn = document.getElementById('modalGoogle');
+      const submitBtn = document.getElementById('modalSubmit');
+
+      function updateLoginUI(){
+        const user = localStorage.getItem('ds_user');
+        if(user){
+          loginBtn.textContent = 'Hi, '+user;
+          loginBtn.classList.add('opacity-90');
+        } else {
+          loginBtn.textContent = 'Masuk';
+          loginBtn.classList.remove('opacity-90');
+        }
+      }
+
+      function openModal(){
+        modal.setAttribute('aria-hidden','false');
+        setTimeout(()=> emailInput.focus(), 80);
+        document.body.style.overflow = 'hidden';
+      }
+      function closeModal(){
+        modal.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+        updateLoginUI();
+      }
+
+      // login button: untuk open modal / logout
+      loginBtn.addEventListener('click', (e)=>{
+        const user = localStorage.getItem('ds_user');
+        if(user){
+          if(confirm('Logout '+user+' ?')){ localStorage.removeItem('ds_user'); showToast('Anda telah logout','info'); updateLoginUI(); }
+          return;
+        }
+        openModal();
+      });
+      closeBtn && closeBtn.addEventListener('click', closeModal);
+      modal && modal.addEventListener('click', (e)=> { if(e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e)=> { if(e.key === 'Escape') closeModal(); });
+
+      // inputs/buttons
+      [emailInput, submitBtn, googleBtn].forEach(el=>{
+        if(!el) return;
+        el.addEventListener('click', e => e.stopPropagation());
+        el.addEventListener('mousedown', e => e.stopPropagation());
+      });
+
+      // demo login / google login
+      submitBtn?.addEventListener('click', ()=>{
+        const val = emailInput.value.trim();
+        if(!val){ showToast('Isi email','warn'); emailInput.focus(); return; }
+        localStorage.setItem('ds_user', val);
+        showToast('Berhasil masuk: '+val,'success');
+        closeModal();
+      });
+      googleBtn?.addEventListener('click', ()=>{
+        const demo = 'google_user@example.com';
+        localStorage.setItem('ds_user', demo);
+        showToast('Masuk dengan Google (demo): '+demo,'success');
+        closeModal();
+      });
+
+      // init UI
+      updateLoginUI();
+    })();
+  </script>
+
+</body>
+</html>
